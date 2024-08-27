@@ -2,12 +2,12 @@ from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
 import os
+import yfinance as yf
 
 app = Flask(__name__)
 
 # Load the trained model
-# Use __file__ (double underscores) instead of _file_ (single underscore)
-main_dir = os.path.dirname(os.path.realpath(__file__))  # Corrected to __file__
+main_dir = os.path.dirname(os.path.realpath(__file__))  # Get the directory of the current file
 
 # Construct the model path
 model_path = os.path.join(main_dir, 'gbp_usd_model.pkl')
@@ -17,15 +17,19 @@ model = joblib.load(model_path)
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    # Get the input data from the request
-    data = request.get_json()
+    # Fetch current data for GBP/USD
+    ticker = yf.Ticker("GBPUSD=X")  # Use the appropriate ticker for GBP/USD
+    current_data = ticker.history(period="1d")
 
-    # Create a DataFrame from the input data
+    # Extract the latest OHLC data
+    latest_data = current_data.iloc[-1]
+
+    # Create a DataFrame from the latest OHLC data
     input_data = pd.DataFrame({
-        'Previous_Close': [data['previous_close']],
-        'Previous_High': [data['previous_high']],
-        'Previous_Low': [data['previous_low']],
-        'Previous_Open': [data['previous_open']]
+        'Previous_Close': [latest_data['Close']],  # Corrected 'Cose' to 'Close'
+        'Previous_High': [latest_data['High']],
+        'Previous_Low': [latest_data['Low']],
+        'Previous_Open': [latest_data['Open']]
     })
 
     # Make the prediction
